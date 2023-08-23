@@ -61,14 +61,25 @@ from PIL import Image
 def transform_step(step: Dict[str, Any]) -> Dict[str, Any]:
     """Maps step from source dataset to target dataset config.
        Input is dict of numpy arrays."""
-    img = Image.fromarray(step['observation']['image']).resize(
-        (128, 128), Image.Resampling.LANCZOS)
+    img = np.array(Image.fromarray(step['observation']['image']).resize(
+        (128, 128), Image.Resampling.LANCZOS))
+    img1 = np.array(Image.fromarray(step['observation']['image1']).resize(
+        (128, 128), Image.Resampling.LANCZOS))
+    img2 = np.array(Image.fromarray(step['observation']['image2']).resize(
+        (128, 128), Image.Resampling.LANCZOS))
+    
+    out_action = np.zeros((8,), dtype=np.float32)
+    out_action[:4] = step['action'][:4]
+    out_action[-2] = step['action'][4]
+
     transformed_step = {
         'observation': {
-            'image': np.array(img),
+            'image': img,
+            'image1': img1,
+            'image2': img2,
+            'state': step['observation']['state']             # state array
         },
-        'action': np.concatenate(
-            [step['action'][:3], step['action'][5:8], step['action'][-2:]]),
+        'action': out_action,
     }
 
     # copy over all other fields unchanged
@@ -77,4 +88,3 @@ def transform_step(step: Dict[str, Any]) -> Dict[str, Any]:
         transformed_step[copy_key] = step[copy_key]
 
     return transformed_step
-
